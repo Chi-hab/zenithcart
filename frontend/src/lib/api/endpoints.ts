@@ -1,6 +1,9 @@
 import { api, API_URL } from "./axios";
 import type {
+  Address,
   AuthTokens,
+  Cart,
+  CartItem,
   Category,
   InventoryRecord,
   Order,
@@ -11,11 +14,17 @@ import type {
 
 // ----- Server-side fetch helpers (used by SSR/SSG pages) ----------------- //
 
+// Server-rendered pages run inside the Next.js container, where `localhost`
+// resolves to the container itself — not the Django service. Use the internal
+// service URL when provided (e.g. http://web:8000/api/v1 under docker-compose),
+// and fall back to the public URL for plain local development.
+const SERVER_API_URL = process.env.INTERNAL_API_URL ?? API_URL;
+
 export async function fetchProducts(
   searchParams: Record<string, string> = {},
 ): Promise<Paginated<Product>> {
   const qs = new URLSearchParams(searchParams).toString();
-  const res = await fetch(`${API_URL}/products/${qs ? `?${qs}` : ""}`, {
+  const res = await fetch(`${SERVER_API_URL}/products/${qs ? `?${qs}` : ""}`, {
     next: { revalidate: 60 },
   });
   if (!res.ok) throw new Error("Failed to load products");
@@ -25,7 +34,7 @@ export async function fetchProducts(
 export async function fetchProductBySlug(
   slug: string,
 ): Promise<Product | null> {
-  const res = await fetch(`${API_URL}/products/${slug}/`, {
+  const res = await fetch(`${SERVER_API_URL}/products/${slug}/`, {
     cache: "no-store",
   });
   if (res.status === 404) return null;
@@ -35,7 +44,7 @@ export async function fetchProductBySlug(
 
 export async function fetchTopSellers(): Promise<Product[]> {
   try {
-    const res = await fetch(`${API_URL}/products/top_sellers/`, {
+    const res = await fetch(`${SERVER_API_URL}/products/top_sellers/`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) return [];
@@ -48,7 +57,7 @@ export async function fetchTopSellers(): Promise<Product[]> {
 
 export async function fetchCategoryTree(): Promise<Category[]> {
   try {
-    const res = await fetch(`${API_URL}/categories/tree/`, {
+    const res = await fetch(`${SERVER_API_URL}/categories/tree/`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) return [];
@@ -74,13 +83,42 @@ export const authApi = {
   me: () => api.get<User>("/auth/me/").then((r) => r.data),
 };
 
+export const accountApi = {
+  createAddress: (payload: Omit<Address, "id">) =>
+    api.post<Address>("/auth/addresses/", payload).then((r) => r.data),
+};
+
+export interface ProductInput {
+  name: string;
+  slug: string;
+  sku: string;
+  category: string;
+  price: string;
+  currency: string;
+  description?: string;
+  is_active: boolean;
+}
+
 export const productApi = {
   list: (params?: Record<string, string>) =>
     api
       .get<Paginated<Product>>("/products/", { params })
       .then((r) => r.data),
-  create: (payload: Partial<Product>) =>
+  create: (payload: ProductInput) =>
     api.post<Product>("/products/", payload).then((r) => r.data),
+};
+
+export const categoryApi = {
+  list: () =>
+    api.get<Paginated<Category>>("/categories/").then((r) => r.data),
+};
+
+export const cartApi = {
+  get: () => api.get<Cart>("/cart/").then((r) => r.data),
+  addItem: (payload: { product: string; quantity: number }) =>
+    api.post<CartItem>("/cart/items/", payload).then((r) => r.data),
+  removeItem: (id: string) =>
+    api.delete(`/cart/items/${id}/`).then((r) => r.data),
 };
 
 export const orderApi = {
