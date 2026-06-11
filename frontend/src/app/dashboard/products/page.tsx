@@ -1,12 +1,9 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductFormSheet } from "@/components/dashboard/product-form-sheet";
 import { useProducts } from "@/hooks/use-products";
 import { formatCurrency } from "@/lib/utils";
 
@@ -21,11 +18,7 @@ export default function DashboardProductsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
           <p className="text-muted-foreground">Manage your catalog.</p>
         </div>
-        <Button
-          onClick={() => toast.info("Product creation form wires up in Phase 4.")}
-        >
-          <Plus className="h-4 w-4" /> New product
-        </Button>
+        <ProductFormSheet />
       </div>
 
       <Card className="overflow-hidden">

@@ -43,12 +43,30 @@ export interface Product {
   created_at: string;
 }
 
+export interface Address {
+  id: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
+}
+
 export interface CartItem {
   id: string;
   product: string;
   product_detail?: Product;
   quantity: number;
   line_total: string;
+}
+
+export interface Cart {
+  id: string;
+  items: CartItem[];
+  subtotal: string;
+  updated_at: string;
 }
 
 export interface OrderItem {
